@@ -35,11 +35,23 @@ flist.sort()
 # ==================== GET OFFSETS ====================
 
 dists = []
+offsets = []
+confs = []
 for idx, fname in enumerate(flist):
     offset, conf, dist = s.evaluate(opt,videofile=fname)
+    offsets.append(offset)
+    confs.append(conf)
     dists.append(dist)
       
 # ==================== PRINT RESULTS TO FILE ====================
 
 with open(os.path.join(opt.work_dir,opt.reference,'activesd.pckl'), 'wb') as fil:
     pickle.dump(dists, fil)
+
+# ==================== SAVE OFFSETS TO TXT FILE ====================
+
+with open(os.path.join(opt.work_dir,opt.reference,'offsets.txt'), 'w') as fil:
+    for idx, (offset, conf) in enumerate(zip(offsets, confs)):
+        fil.write('TRACK %d: OFFSET %d, CONF %.3f\n'%(idx, offset, conf))
+
+print("Offset results saved to %s" % os.path.join(opt.work_dir,opt.reference,'offsets.txt'))

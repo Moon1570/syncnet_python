@@ -36,6 +36,44 @@ python run_syncnet.py --videofile /path/to/video.mp4 --reference name_of_video -
 python run_visualise.py --videofile /path/to/video.mp4 --reference name_of_video --data_dir /path/to/output
 ```
 
+## Parameters
+
+### run_pipeline.py parameters:
+- `--min_face_size`: Minimum face size in pixels (default: 100). Reduce this value for videos with smaller faces.
+- `--facedet_scale`: Scale factor for face detection (default: 0.25)
+- `--crop_scale`: Scale bounding box (default: 0.40)
+- `--min_track`: Minimum facetrack duration (default: 100 frames)
+
+Example with smaller faces:
+```
+python run_pipeline.py --videofile /path/to/video.mp4 --reference name_of_video --data_dir /path/to/output --min_face_size 50
+```
+
+## Troubleshooting
+
+### Issue: Empty pycrop directory / No bounding boxes in output video
+
+**Symptoms:**
+- `$DATA_DIR/pycrop/$REFERENCE/` directory is empty
+- No bounding boxes appear in the output video
+- Face detection appears to work (faces are detected in console output)
+
+**Cause:** The detected faces are smaller than the minimum face size threshold.
+
+**Solution:** 
+1. Check your detected face sizes by examining the face detection output
+2. Reduce the `--min_face_size` parameter in `run_pipeline.py`
+3. For videos with small faces (< 100 pixels), try `--min_face_size 50` or lower
+
+**Example fix:**
+```bash
+# Instead of default parameters
+python run_pipeline.py --videofile data/chunk_003.mp4 --reference chunk_003 --data_dir data/test/
+
+# Use lower minimum face size
+python run_pipeline.py --videofile data/chunk_003.mp4 --reference chunk_003 --data_dir data/test/ --min_face_size 50
+```
+
 Outputs:
 ```
 $DATA_DIR/pycrop/$REFERENCE/*.avi - cropped face tracks
