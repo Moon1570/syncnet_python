@@ -49,6 +49,26 @@ Example with smaller faces:
 python run_pipeline.py --videofile /path/to/video.mp4 --reference name_of_video --data_dir /path/to/output --min_face_size 50
 ```
 
+## Video Processing Utilities
+
+For video preprocessing, chunking, and analysis, use the video utilities:
+
+```bash
+# Get video information
+python utils/video_utils.py info --input data/video.mp4
+
+# Split video into 30-second chunks
+python utils/video_utils.py chunk-time --input data/video.mp4 --output_dir chunks/ --duration 30
+
+# Split video at silence boundaries (ideal for speech)
+python utils/video_utils.py chunk-silence --input data/conversation.mp4 --output_dir chunks/
+
+# Extract audio for processing
+python utils/video_utils.py extract-audio --input data/video.mp4 --output audio/extracted.wav
+```
+
+**📖 See [VIDEO_UTILS_GUIDE.md](VIDEO_UTILS_GUIDE.md) for comprehensive usage examples and best practices.**
+
 ## Troubleshooting
 
 ### Issue: Empty pycrop directory / No bounding boxes in output video
@@ -73,6 +93,48 @@ python run_pipeline.py --videofile data/chunk_003.mp4 --reference chunk_003 --da
 # Use lower minimum face size
 python run_pipeline.py --videofile data/chunk_003.mp4 --reference chunk_003 --data_dir data/test/ --min_face_size 50
 ```
+
+## Batch Processing and Quality Filtering
+
+### Filter Videos by SyncNet Quality Scores
+
+Process multiple videos and automatically filter them based on audio-visual synchronization quality:
+
+```bash
+# Basic filtering with default thresholds
+python filter_videos_by_sync_score.py --input_dir /path/to/videos --output_dir /path/to/filtered_results
+
+# Using quality presets
+python filter_videos_by_sync_score.py --input_dir /path/to/videos --output_dir /path/to/results --preset high
+
+# Custom quality thresholds
+python filter_videos_by_sync_score.py \
+  --input_dir /path/to/videos \
+  --output_dir /path/to/results \
+  --min_confidence 6.0 \
+  --max_abs_offset 3 \
+  --min_face_size 40 \
+  --max_workers 4
+```
+
+**Quality Presets:**
+- `--preset strict`: confidence≥8.0, |offset|≤2 (publication ready)
+- `--preset high`: confidence≥6.0, |offset|≤3 (training data quality)
+- `--preset medium`: confidence≥4.0, |offset|≤5 (balanced filtering)
+- `--preset relaxed`: confidence≥2.0, |offset|≤8 (keep most usable)
+
+**Output Structure:**
+```
+output_dir/
+├── good_quality/              # Videos that pass quality thresholds
+├── poor_quality/              # Videos filtered out for low quality
+└── sync_filter_results.json   # Detailed analysis results
+```
+
+**Parameters:**
+- `--min_confidence`: Minimum SyncNet confidence score to keep video
+- `--max_abs_offset`: Maximum absolute frame offset to keep video
+- `--keep_all`: Analyze quality but don't copy files to separate folders
 
 Outputs:
 ```
