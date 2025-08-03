@@ -49,6 +49,26 @@ Example with smaller faces:
 python run_pipeline.py --videofile /path/to/video.mp4 --reference name_of_video --data_dir /path/to/output --min_face_size 50
 ```
 
+## Video Processing Utilities
+
+For video preprocessing, chunking, and analysis, use the video utilities:
+
+```bash
+# Get video information
+python utils/video_utils.py info --input data/video.mp4
+
+# Split video into 30-second chunks
+python utils/video_utils.py chunk-time --input data/video.mp4 --output_dir chunks/ --duration 30
+
+# Split video at silence boundaries (ideal for speech)
+python utils/video_utils.py chunk-silence --input data/conversation.mp4 --output_dir chunks/
+
+# Extract audio for processing
+python utils/video_utils.py extract-audio --input data/video.mp4 --output audio/extracted.wav
+```
+
+**📖 See [VIDEO_UTILS_GUIDE.md](VIDEO_UTILS_GUIDE.md) for comprehensive usage examples and best practices.**
+
 ## Troubleshooting
 
 ### Issue: Empty pycrop directory / No bounding boxes in output video
