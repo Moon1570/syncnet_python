@@ -129,7 +129,7 @@ output_dir/
 
 ---
 
-## 3. Silence-based Video Chunking
+## 3. Silence-based Video Chunking (Do not use this. This can not detect silence if there is a backgroud noise)
 
 Automatically split videos at natural silence boundaries, ideal for speech and conversation videos.
 
