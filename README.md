@@ -127,9 +127,55 @@ python filter_videos_by_sync_score.py \
 ```
 output_dir/
 ├── good_quality/              # Videos that pass quality thresholds
+│   ├── video1.mp4             # Original videos
+│   ├── video2.mp4
+│   └── syncnet_outputs/       # SyncNet processing results (NEW!)
+│       ├── video1/
+│       │   ├── cropped_faces/     # Cropped face track videos
+│       │   ├── video1_with_bboxes.avi  # Video with bounding boxes
+│       │   └── analysis/          # Analysis results
+│       │       ├── offsets.txt        # Frame offset values
+│       │       └── tracks.pkl         # Face tracking data
+│       └── video2/
+│           └── ...
 ├── poor_quality/              # Videos filtered out for low quality
+│   ├── rejected_video.mp4     # Original videos
+│   └── syncnet_outputs/       # SyncNet outputs for poor quality videos
+│       └── rejected_video/
+│           └── ...
+├── syncnet_outputs/           # All SyncNet processing results
+│   ├── video1/               # Individual video results
+│   └── video2/
 └── sync_filter_results.json   # Detailed analysis results
 ```
+
+**🎯 Enhanced Output Preservation (NEW!):**
+
+The filtering tool now preserves valuable SyncNet processing outputs for further analysis:
+
+- **Cropped Face Videos**: Individual face tracks as separate video files (`cropped_faces/*.avi`)
+- **Bounding Box Visualizations**: Original video with face detection overlays (`*_with_bboxes.avi`)
+- **Analysis Data**: Frame offsets, confidence scores, and tracking information
+- **Quality-Organized**: All outputs copied to `good_quality/` and `poor_quality/` folders
+
+This is especially useful for:
+- **Active Speaker Detection**: Use cropped faces and bounding boxes for annotation
+- **Training Data Preparation**: Access to pre-processed face tracks and metadata
+- **Quality Analysis**: Compare outputs between good and poor quality videos
+
+**Testing the Enhanced Filter:**
+
+Test the enhanced filtering functionality:
+
+```bash
+python test_enhanced_filter.py
+```
+
+This will verify that:
+- All required dependencies are present
+- Output preservation works correctly
+- Quality directories are created with proper structure
+- SyncNet outputs are preserved in organized folders
 
 **Parameters:**
 - `--min_confidence`: Minimum SyncNet confidence score to keep video

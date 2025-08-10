@@ -158,6 +158,27 @@ class SyncNetFilter:
             if not passes_offset:
                 result['quality_reasons'].append(f"High offset: {abs_offset} > {self.max_abs_offset}")
             
+            # Step 4: Generate visualization with bounding boxes
+            visualize_cmd = [
+                python_exec, 'run_visualise.py',
+                '--videofile', str(video_path),
+                '--reference', video_name,
+                '--data_dir', temp_video_dir
+            ]
+            
+            visualize_result = subprocess.run(
+                visualize_cmd,
+                capture_output=True,
+                text=True,
+                cwd=os.getcwd()
+            )
+            
+            if visualize_result.returncode == 0:
+                result['visualization_created'] = True
+            else:
+                result['visualization_created'] = False
+                result['visualization_error'] = visualize_result.stderr
+            
             result['status'] = 'success'
             
         except Exception as e:
@@ -166,7 +187,11 @@ class SyncNetFilter:
             result['end_time'] = time.time()
             result['processing_time'] = result['end_time'] - result['start_time']
             
-            # Clean up temporary files
+            # Preserve important outputs before cleanup
+            if result['status'] == 'success':
+                self._preserve_syncnet_outputs(temp_video_dir, video_name, output_dir, result)
+            
+            # Clean up temporary files (but keep preserved outputs)
             try:
                 if os.path.exists(temp_video_dir):
                     shutil.rmtree(temp_video_dir)
@@ -174,6 +199,115 @@ class SyncNetFilter:
                 pass
         
         return result
+    
+    def _preserve_syncnet_outputs(self, temp_video_dir, video_name, output_dir, result):
+        """
+        Preserve important SyncNet outputs before cleanup
+        
+        Args:
+            temp_video_dir: Temporary processing directory
+            video_name: Name of the video being processed
+            output_dir: Main output directory
+            result: Processing result dictionary
+        """
+        try:
+            # Create output subdirectories
+            syncnet_outputs_dir = os.path.join(output_dir, 'syncnet_outputs', video_name)
+            os.makedirs(syncnet_outputs_dir, exist_ok=True)
+            
+            # Preserve cropped face videos
+            crop_dir = os.path.join(temp_video_dir, 'pycrop', video_name)
+            if os.path.exists(crop_dir):
+                crop_output_dir = os.path.join(syncnet_outputs_dir, 'cropped_faces')
+                os.makedirs(crop_output_dir, exist_ok=True)
+                
+                # Copy all cropped face videos
+                for crop_file in os.listdir(crop_dir):
+                    if crop_file.endswith('.avi'):
+                        src_path = os.path.join(crop_dir, crop_file)
+                        dst_path = os.path.join(crop_output_dir, crop_file)
+                        shutil.copy2(src_path, dst_path)
+                
+                result['cropped_faces_saved'] = crop_output_dir
+            
+            # Preserve visualization video with bounding boxes
+            viz_video = os.path.join(temp_video_dir, 'pyavi', video_name, 'video_out.avi')
+            if os.path.exists(viz_video):
+                viz_output_path = os.path.join(syncnet_outputs_dir, f'{video_name}_with_bboxes.avi')
+                shutil.copy2(viz_video, viz_output_path)
+                result['bbox_video_saved'] = viz_output_path
+            
+            # Preserve analysis results
+            analysis_dir = os.path.join(syncnet_outputs_dir, 'analysis')
+            os.makedirs(analysis_dir, exist_ok=True)
+            
+            # Copy offsets file
+            offsets_file = os.path.join(temp_video_dir, 'pywork', video_name, 'offsets.txt')
+            if os.path.exists(offsets_file):
+                dst_offsets = os.path.join(analysis_dir, 'offsets.txt')
+                shutil.copy2(offsets_file, dst_offsets)
+            
+            # Copy tracks file
+            tracks_file = os.path.join(temp_video_dir, 'pywork', video_name, 'tracks.pckl')
+            if os.path.exists(tracks_file):
+                dst_tracks = os.path.join(analysis_dir, 'tracks.pckl')
+                shutil.copy2(tracks_file, dst_tracks)
+            
+            # Copy face detection results
+            faces_file = os.path.join(temp_video_dir, 'pywork', video_name, 'faces.pckl')
+            if os.path.exists(faces_file):
+                dst_faces = os.path.join(analysis_dir, 'faces.pckl')
+                shutil.copy2(faces_file, dst_faces)
+            
+            # Copy scene detection results
+            scene_file = os.path.join(temp_video_dir, 'pywork', video_name, 'scene.pckl')
+            if os.path.exists(scene_file):
+                dst_scene = os.path.join(analysis_dir, 'scene.pckl')
+                shutil.copy2(scene_file, dst_scene)
+            
+            # Copy activesd file (sync analysis)
+            activesd_file = os.path.join(temp_video_dir, 'pywork', video_name, 'activesd.pckl')
+            if os.path.exists(activesd_file):
+                dst_activesd = os.path.join(analysis_dir, 'activesd.pckl')
+                shutil.copy2(activesd_file, dst_activesd)
+            
+            result['analysis_files_saved'] = analysis_dir
+            
+        except Exception as e:
+            # Don't fail the main process if preservation fails
+            result['preservation_error'] = str(e)
+    
+    def _copy_syncnet_outputs_to_quality_dir(self, result, quality_dir, output_dir):
+        """
+        Copy SyncNet outputs to the quality directory for easy access
+        
+        Args:
+            result: Processing result dictionary
+            quality_dir: Quality directory (good_quality or poor_quality)
+            output_dir: Main output directory
+        """
+        try:
+            video_name = result['video_name']
+            syncnet_source_dir = os.path.join(output_dir, 'syncnet_outputs', video_name)
+            
+            if os.path.exists(syncnet_source_dir):
+                # Create syncnet subdirectory in quality folder
+                quality_syncnet_dir = os.path.join(quality_dir, 'syncnet_outputs', video_name)
+                os.makedirs(quality_syncnet_dir, exist_ok=True)
+                
+                # Copy the entire syncnet output directory
+                for item in os.listdir(syncnet_source_dir):
+                    src_path = os.path.join(syncnet_source_dir, item)
+                    dst_path = os.path.join(quality_syncnet_dir, item)
+                    
+                    if os.path.isdir(src_path):
+                        shutil.copytree(src_path, dst_path, dirs_exist_ok=True)
+                    else:
+                        shutil.copy2(src_path, dst_path)
+                        
+        except Exception as e:
+            # Don't fail the main process if copying fails
+            pass
     
     def filter_videos(self, input_dir, output_dir, max_workers=2, keep_all=False):
         """
@@ -250,6 +384,9 @@ class SyncNetFilter:
                             dst_dir = good_dir if result['passes_quality'] else poor_dir
                             dst_path = os.path.join(dst_dir, os.path.basename(src_path))
                             shutil.copy2(src_path, dst_path)
+                            
+                            # Also copy SyncNet outputs to the quality directory
+                            self._copy_syncnet_outputs_to_quality_dir(result, dst_dir, output_dir)
                             
                     else:
                         status_emoji = "⚠️" if result['status'] == 'no_faces' else "❌"
