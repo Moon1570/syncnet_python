@@ -193,6 +193,9 @@ $DATA_DIR/pyavi/$REFERENCE/video_out.avi - output video (as shown below)
   <img src="img/ex2.jpg" width="45%"/>
 </p>
 
+##Todo
+- add duplicate remover
+
 ## Publications
  
 ```
