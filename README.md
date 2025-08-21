@@ -177,6 +177,25 @@ This will verify that:
 - Quality directories are created with proper structure
 - SyncNet outputs are preserved in organized folders
 
+### Directory Preparation Utility
+
+Organize SyncNet results into structured directories for easy access:
+
+```bash
+# Organize filtered results into 4 directories
+python utils/directory_prepare.py \
+    --input_dir results/video1/good_quality \
+    --output_dir organized_output
+```
+
+This creates:
+- **`video_normal/`**: Original chunk videos 
+- **`video_bbox/`**: Bounding box visualizations (converted to MP4)
+- **`video_cropped/`**: Cropped face videos (converted to MP4)
+- **`audio/`**: Extracted audio files (16kHz mono WAV)
+
+See [`utils/DIRECTORY_PREPARE_README.md`](utils/DIRECTORY_PREPARE_README.md) for detailed usage guide.
+
 **Parameters:**
 - `--min_confidence`: Minimum SyncNet confidence score to keep video
 - `--max_abs_offset`: Maximum absolute frame offset to keep video
